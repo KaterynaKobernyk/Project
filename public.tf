@@ -18,31 +18,24 @@ resource "aws_security_group" "web" {
         cidr_blocks = ["0.0.0.0/0"]
     }
     ingress {
-        from_port = -1
-        to_port = -1
-        protocol = "icmp"
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
 
-    egress { # SQL Server
-        from_port = 1433
-        to_port = 1433
-        protocol = "tcp"
-        cidr_blocks = ["${var.private_subnet_cidr}"]
-    }
-    egress { # MySQL
-        from_port = 3306
-        to_port = 3306
-        protocol = "tcp"
-        cidr_blocks = ["${var.private_subnet_cidr}"]
-    }
-
+      egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+    
     vpc_id = "${aws_vpc.project_vpc.id}"
     tags = {
         Name = "WebServerSG"
     }
 }
-
 resource "aws_instance" "web-1" {
     ami = "${lookup(var.amis, var.aws_region)}"
     availability_zone = "us-west-1a"

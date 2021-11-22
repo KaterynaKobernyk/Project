@@ -1,6 +1,7 @@
 resource "aws_vpc" "project_vpc" {
     cidr_block = "${var.vpc_cidr}"
     enable_dns_hostnames = true
+    enable_dns_support = true
     tags = {
       Name = "Project VPC"
     }
@@ -19,56 +20,18 @@ resource "aws_internet_gateway" "project_int_gateway" {
 resource "aws_security_group" "nat" {
     name = "security_group_vpc_nat"
     description = "Allow traffic to pass from the private subnet to the internet"
-
-    ingress {
-        from_port = 80
-        to_port = 80
-        protocol = "tcp"
-        cidr_blocks = ["${var.private_subnet_cidr}"]
-    }
-    ingress {
-        from_port = 443
-        to_port = 443
-        protocol = "tcp"
-        cidr_blocks = ["${var.private_subnet_cidr}"]
-    }
-    ingress {
-        from_port = 22
-        to_port = 22
-        protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    ingress {
-        from_port = -1
-        to_port = -1
-        protocol = "icmp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    egress {
-        from_port = 80
-        to_port = 80
-        protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress {
-        from_port = 443
-        to_port = 443
-        protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress {
-        from_port = 22
-        to_port = 22
-        protocol = "tcp"
-        cidr_blocks = ["${var.vpc_cidr}"]
-    }
-    egress {
-        from_port = -1
-        to_port = -1
-        protocol = "icmp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
     vpc_id = "${aws_vpc.project_vpc.id}"
 
@@ -102,7 +65,7 @@ resource "aws_eip" "nat" {
 */
 resource "aws_subnet" "us-west-1a-public" {
     vpc_id = "${aws_vpc.project_vpc.id}"
-
+    map_public_ip_on_launch = "true"
     cidr_block = "${var.public_subnet_cidr}"
     availability_zone = "us-west-1a"
 
@@ -134,7 +97,7 @@ resource "aws_route_table_association" "us-west-1a-public" {
 */
 resource "aws_subnet" "us-west-1a-private" {
     vpc_id = "${aws_vpc.project_vpc.id}"
-
+    map_public_ip_on_launch = "false"
     cidr_block = "${var.private_subnet_cidr}"
     availability_zone = "us-west-1a"
 
@@ -142,7 +105,6 @@ resource "aws_subnet" "us-west-1a-private" {
         Name = "Private Subnet"
     }
 }
-
 
 resource "aws_route_table" "us-west-1a-private" {
     vpc_id = "${aws_vpc.project_vpc.id}"
@@ -153,7 +115,7 @@ resource "aws_route_table" "us-west-1a-private" {
     }
 
     tags = {
-        Name = "Private Subnet"
+        Name = "Private Subnet1"
     }
 }
 
@@ -163,32 +125,19 @@ resource "aws_route_table_association" "us-west-1a-private" {
 }
 
 
-
 resource "aws_subnet" "us-west-1c-private" {
     vpc_id = "${aws_vpc.project_vpc.id}"
-
+    map_public_ip_on_launch = "false"
     cidr_block = "${var.private_subnet_cidr2}"
     availability_zone = "us-west-1c"
-
-    tags = {
-        Name = "Private Subnet"
-    }
-}
-
-resource "aws_route_table" "us-west-1c-private" {
-    vpc_id = "${aws_vpc.project_vpc.id}"
-
-    route {
-        cidr_block = "0.0.0.0/0"
-        instance_id = "${aws_instance.nat.id}"
-    }
 
     tags = {
         Name = "Private Subnet2"
     }
 }
 
+
 resource "aws_route_table_association" "us-west-1c-private" {
     subnet_id = "${aws_subnet.us-west-1c-private.id}"
-    route_table_id = "${aws_route_table.us-west-1c-private.id}"
+    route_table_id = "${aws_route_table.us-west-1a-private.id}"
 }
